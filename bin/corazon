@@ -1,0 +1,89 @@
+#!/usr/bin/env node
+
+const figlet = require('figlet');
+const Printer = require('@darkobits/lolcatjs');
+const { program } = require('commander');
+const inquirer = require('inquirer');
+const fs = require('fs');
+const path = require('path');
+const chalk = require('chalk');
+const ora = require('ora');
+const download = require("download-git-repo");
+const shelljs = require("shelljs");
+
+let packageJson = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), { encoding: 'utf-8' }));
+let txt = figlet.textSync("v " + packageJson.version);
+
+const downloadUrl = "direct:https://github.com.cnpmjs.org/FriendsA/react-project.git#main";
+
+program.version(Printer.fromString(txt), "-V,--version");
+
+const initHandler = function (appName) {
+    inquirer
+        .prompt([
+            {
+                type: "input",
+                name: "name",
+                message: chalk.greenBright("请输入项目名称?"),
+                default: appName,
+            },
+            // {
+            //     type: "list",
+            //     name: "ts",
+            //     message: chalk.blueBright("是否使用typescript?"),
+            //     choices: ["yes", "no"],
+            // },
+            // {
+            //     type: "list",
+            //     name: "style",
+            //     message: chalk.yellowBright("选择样式库?"),
+            //     choices: ["antd", "tailwind", "none"],
+            // },
+        ])
+        .then((answers) => {
+            let spinner = ora("创建中").start();
+            spinner.start();
+            let { name } = answers;
+            let _pwd = shelljs.pwd().stdout;
+            let _projectPath = path.join(_pwd, `/${name}`);
+            shelljs.rm("-rf", _projectPath);
+            download(downloadUrl, _projectPath, { clone: true }, function (err) {
+                if (err) {
+                    console.log("\n" + chalk.redBright(err));
+                } else {
+                    shelljs.sed("-i", "project-name", name, _projectPath + "/package.json");
+                    console.log("\n" + chalk.greenBright(`
+init project success!
+---------------------
+cd ${name} 
+yarn
+yarn start
+---------------------
+`))
+                }
+                spinner.stop();
+            });
+        })
+        .catch((error) => {
+            if (error.isTtyError) {
+                console.log(chalk.redBright("Prompt couldn't be rendered in the current environment!"));
+            } else {
+                console.log(chalk.redBright("Something else went wrong!"))
+            }
+        });
+}
+
+
+program.command("init <app-name>")
+    .description("create a new project")
+    .action(function (appName, options) {
+        initHandler(appName)
+    })
+
+program.on('command:*', ([cmd]) => {
+    console.log(chalk.redBright(`cmd `) + chalk.yellowBright(cmd) + chalk.redBright(' not exist!'));
+    program.outputHelp();
+    process.exitCode = 1
+})
+
+program.parse(process.argv);

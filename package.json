@@ -1,10 +1,11 @@
 {
   "name": "corazon-cli",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "main": "index.js",
   "bin": {
     "corazon-cli": "bin/corazon"
   },
+  "repository": "FriendsA/corazon-cli",
   "license": "MIT",
   "devDependencies": {
     "@darkobits/lolcatjs": "^3.1.5",
